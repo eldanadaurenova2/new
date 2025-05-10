@@ -9,6 +9,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMixin {
+  bool isDarkTheme = false;
   bool notificationsEnabled = true;
   String selectedLanguage = 'English';
 
@@ -26,10 +27,8 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
     );
 
     _slideAnimations = List.generate(5, (index) {
-      return Tween<Offset>(
-        begin: const Offset(0, 0.2),
-        end: Offset.zero,
-      ).animate(
+      return Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+          .animate(
         CurvedAnimation(
           parent: _controller,
           curve: Interval(0.1 * index, 0.1 * index + 0.4, curve: Curves.easeOut),
@@ -107,14 +106,13 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
 
           animatedItem(
             index: 2,
-            child: ListTile(
-              leading: Hero(
-                tag: 'notification-icon', // Уникальный tag для Hero
-                child: const Icon(Icons.notifications),
-              ),
+            child: SwitchListTile(
               title: const Text('Notifications'),
-              onTap: () {
-                Navigator.of(context).push(_createSlideRouteToNotifications());
+              value: notificationsEnabled,
+              onChanged: (value) {
+                setState(() {
+                  notificationsEnabled = value;
+                });
               },
             ),
           ),
@@ -126,7 +124,8 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
               value: isDarkTheme,
               onChanged: (value) {
                 setState(() {
-                  themeNotifier.value = value ? ThemeMode.dark : ThemeMode.light;
+                  themeNotifier.value =
+                      value ? ThemeMode.dark : ThemeMode.light;
                 });
               },
             ),
