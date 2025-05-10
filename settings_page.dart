@@ -38,10 +38,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
     });
 
     _fadeAnimations = List.generate(5, (index) {
-      return Tween<double>(
-        begin: 0,
-        end: 1,
-      ).animate(
+      return Tween<double>(begin: 0, end: 1).animate(
         CurvedAnimation(
           parent: _controller,
           curve: Interval(0.1 * index, 0.1 * index + 0.4, curve: Curves.easeIn),
@@ -110,13 +107,14 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
 
           animatedItem(
             index: 2,
-            child: SwitchListTile(
+            child: ListTile(
+              leading: Hero(
+                tag: 'notification-icon', // Уникальный tag для Hero
+                child: const Icon(Icons.notifications),
+              ),
               title: const Text('Notifications'),
-              value: notificationsEnabled,
-              onChanged: (value) {
-                setState(() {
-                  notificationsEnabled = value;
-                });
+              onTap: () {
+                Navigator.of(context).push(_createSlideRouteToNotifications());
               },
             ),
           ),
@@ -128,8 +126,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
               value: isDarkTheme,
               onChanged: (value) {
                 setState(() {
-                  themeNotifier.value =
-                      value ? ThemeMode.dark : ThemeMode.light;
+                  themeNotifier.value = value ? ThemeMode.dark : ThemeMode.light;
                 });
               },
             ),
