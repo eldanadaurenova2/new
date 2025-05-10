@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../main.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -8,9 +9,8 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMixin {
-  bool isDarkTheme = false;
   bool notificationsEnabled = true;
-  String selectedLanguage = 'Русский';
+  String selectedLanguage = 'English';
 
   late AnimationController _controller;
   late List<Animation<Offset>> _slideAnimations;
@@ -25,7 +25,6 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
       duration: const Duration(milliseconds: 1000),
     );
 
-    // Создаем интервалы для последовательной анимации элементов
     _slideAnimations = List.generate(5, (index) {
       return Tween<Offset>(
         begin: const Offset(0, 0.2),
@@ -33,7 +32,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
       ).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: Interval(0.1 * index, 0.1 * index + 0.5, curve: Curves.easeOut),
+          curve: Interval(0.1 * index, 0.1 * index + 0.4, curve: Curves.easeOut),
         ),
       );
     });
@@ -45,7 +44,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
       ).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: Interval(0.1 * index, 0.1 * index + 0.5, curve: Curves.easeIn),
+          curve: Interval(0.1 * index, 0.1 * index + 0.4, curve: Curves.easeIn),
         ),
       );
     });
@@ -59,7 +58,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
     super.dispose();
   }
 
-  Widget _animatedItem({required int index, required Widget child}) {
+  Widget animatedItem({required int index, required Widget child}) {
     return SlideTransition(
       position: _slideAnimations[index],
       child: FadeTransition(
@@ -71,26 +70,29 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    bool isDarkTheme = themeNotifier.value == ThemeMode.dark;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Настройки"),
+        title: const Text("Settings"),
         centerTitle: true,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _animatedItem(
+          animatedItem(
             index: 0,
             child: const Text(
-              'Предпочтения',
+              'Preferences',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 10),
-          _animatedItem(
+
+          animatedItem(
             index: 1,
             child: ListTile(
-              title: const Text("Язык"),
+              title: const Text("Language"),
               trailing: DropdownButton<String>(
                 value: selectedLanguage,
                 items: const [
@@ -105,10 +107,11 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
               ),
             ),
           ),
-          _animatedItem(
+
+          animatedItem(
             index: 2,
             child: SwitchListTile(
-              title: const Text('Уведомления'),
+              title: const Text('Notifications'),
               value: notificationsEnabled,
               onChanged: (value) {
                 setState(() {
@@ -117,24 +120,28 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
               },
             ),
           ),
-          _animatedItem(
+
+          animatedItem(
             index: 3,
             child: SwitchListTile(
-              title: const Text('Тёмная тема'),
+              title: const Text('Dark Mode'),
               value: isDarkTheme,
               onChanged: (value) {
                 setState(() {
-                  isDarkTheme = value;
+                  themeNotifier.value =
+                      value ? ThemeMode.dark : ThemeMode.light;
                 });
               },
             ),
           ),
+
           const Divider(height: 32),
-          _animatedItem(
+
+          animatedItem(
             index: 4,
             child: const ListTile(
-              title: Text("О приложении"),
-              subtitle: Text("Hotel Booking v1.0\nРазработано студентом AITU ❤️"),
+              title: Text("About App"),
+              subtitle: Text("Hotel Booking v1.0\n created by AITU ❤️"),
             ),
           ),
         ],
