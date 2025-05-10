@@ -1,0 +1,192 @@
+import 'package:flutter/material.dart';
+import '../models/hotel.dart';
+import '../models/booking.dart';
+import '../db/booking_database.dart';
+
+class BookingFormPage extends StatefulWidget {
+  final Hotel hotel;
+
+  const BookingFormPage({super.key, required this.hotel});
+
+  @override
+  State<BookingFormPage> createState() => _BookingFormPageState();
+}
+
+class _BookingFormPageState extends State<BookingFormPage> {
+  final _formKey = GlobalKey<FormState>();
+
+  DateTime? _checkInDate;
+  DateTime? _checkOutDate;
+  String _roomType = 'Econom';
+  int _guests = 1;
+
+  bool _isPressed = false;
+  final _guestsController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _guestsController.text = _guests.toString();
+  }
+
+  Future<void> _selectDate(BuildContext context, bool isCheckIn) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: isCheckIn ? DateTime.now() : (_checkInDate ?? DateTime.now()).add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (isCheckIn) {
+          _checkInDate = picked;
+        } else {
+          _checkOutDate = picked;
+        }
+      });
+    }
+  }
+
+  void _submitBooking() async {
+    if (_formKey.currentState!.validate() &&
+        _checkInDate != null &&
+        _checkOutDate != null &&
+        _checkOutDate!.isAfter(_checkInDate!)) {
+      _formKey.currentState!.save();
+
+      final booking = Booking(
+        hotelName: widget.hotel.name,
+        dateRange:
+            "${_checkInDate!.toLocal().toString().split(' ')[0]} — ${_checkOutDate!.toLocal().toString().split(' ')[0]}",
+        roomType: _roomType,
+        guests: _guests,
+      );
+
+      await BookingDatabase().create(booking);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Бронирование успешно!')),
+      );
+
+      Navigator.pop(context, true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Пожалуйста, выберите корректные даты')),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _guestsController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final buttonColor = _isPressed ? Colors.greenAccent : Theme.of(context).primaryColor;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Booking')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              Text(" Hotel: ${widget.hotel.name}", style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+
+              ListTile(
+                title: Text(_checkInDate == null
+                    ? 'Choose a check-in date'
+                    : 'Check-in: ${_checkInDate!.toLocal().toString().split(' ')[0]}'),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: () => _selectDate(context, true),
+              ),
+
+              ListTile(
+                title: Text(_checkOutDate == null
+                    ? 'Choose a departure date'
+                    : 'Departure: ${_checkOutDate!.toLocal().toString().split(' ')[0]}'),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: () => _selectDate(context, false),
+              ),
+
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _roomType,
+                decoration: const InputDecoration(labelText: 'Class'),
+                items: ['Lux', 'Comfort', 'Econom']
+                    .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _roomType = value!;
+                  });
+                },
+              ),
+
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _guestsController,
+                decoration: const InputDecoration(labelText: 'Number of person'),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  final guests = int.tryParse(value ?? '');
+                  if (guests == null || guests < 1) {
+                    return 'Please enter the correct number of guests';
+                  }
+                  return null;
+                },
+                onSaved: (value) {
+                  final parsed = int.tryParse(value ?? '');
+                  if (parsed != null) {
+                    _guests = parsed;
+                  }
+                },
+              ),
+
+              const SizedBox(height: 24),
+
+              // Анимация кнопки
+              Center(
+                child: AnimatedScale(
+                  scale: _isPressed ? 0.95 : 1.0,
+                  duration: const Duration(milliseconds: 150),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    decoration: BoxDecoration(
+                      color: buttonColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () async {
+                          setState(() => _isPressed = true);
+                          await Future.delayed(const Duration(milliseconds: 150));
+                          _submitBooking();
+                          setState(() => _isPressed = false);
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          child: Text(
+                            'Submit',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
